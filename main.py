@@ -8,11 +8,11 @@ from tqdm import tqdm
 # Assuming 'ender' is the package containing the classes from the previous prompt
 import ender 
 from ender.src.activations import ReLU, Softmax
-from ender.src.losses import CrossEntropyLossMultiClass
-from ender.src.layer import DenseLayer
+from ender.src.losses import CategoricalCrossEntropyWithLogits
+from ender.src.layer import DenseLayer, ActivationLayer
 from ender.src.optimizers import Adam
 from ender.src.initializers import HeInitializer, XavierInitializer
-from ender.src.schedulers import ReduceLROnPlateauScheduler
+from ender.src.callbacks import EarlyStopping
 from ender.src.FFNN import RegularizationType, FFNN
 
 # 1. Load and Preprocess Data
@@ -40,7 +40,7 @@ L2_LAMBDA = 0.0001 # Reduced from 1.0 to prevent underfitting
 model = FFNN(
     optimizer=Adam,
     learning_rate=LEARNING_RATE,
-    loss_function=CrossEntropyLossMultiClass(), # Changed from Binary to Categorical
+    loss_function=CategoricalCrossEntropyWithLogits(), # Loss with Logits
     regularization=RegularizationType.L2,
     lmbda=L2_LAMBDA
 )
@@ -50,44 +50,21 @@ model = FFNN(
 
 
 # Hidden Layer 1: 784 -> 128
-model.add_layer(DenseLayer(
-    inputs=28*28,
-    outputs=128,
-    activation=ReLU(),
-    initializer=HeInitializer() # He is better for ReLU than Xavier
-))
-
+model.add_layer(DenseLayer(inputs=28*28, outputs=128, initializer=HeInitializer()))
+model.add_layer(ActivationLayer(ReLU()))
 
 # Hidden Layer 2: 128 -> 64
-model.add_layer(DenseLayer(
-    inputs=128,
-    outputs=64,
-    activation=ReLU(),
-    initializer=HeInitializer()
-))
-
+model.add_layer(DenseLayer(inputs=128, outputs=64, initializer=HeInitializer()))
+model.add_layer(ActivationLayer(ReLU()))
 
 # Hidden Layer 3: 64 -> 32
-model.add_layer(DenseLayer(
-    inputs=64,
-    outputs=32,
-    activation=ReLU(),
-    initializer=HeInitializer()
-))
+model.add_layer(DenseLayer(inputs=64, outputs=32, initializer=HeInitializer()))
+model.add_layer(ActivationLayer(ReLU()))
 
-
-# Output Layer: 32 -> 10 (Softmax for probabilities)
-model.add_layer(DenseLayer(
-    inputs=32,
-    outputs=10,
-    activation=Softmax(),
-    initializer=XavierInitializer()
-))
+# Output Layer: 32 -> 10 (Raw logits for our loss function)
+model.add_layer(DenseLayer(inputs=32, outputs=10, initializer=XavierInitializer()))
 
 model.summary()
-
-# 5. Training
-scheduler = ReduceLROnPlateauScheduler(initial_lr=LEARNING_RATE, factor=0.5, patience=3)
 
 train_losses, val_losses, val_accuracies = model.train(
     X_train, 
@@ -95,7 +72,7 @@ train_losses, val_losses, val_accuracies = model.train(
     epochs=EPOCHS, 
     batch_size=BATCH_SIZE, 
     validation_data=(X_val, y_val),
-    lr_scheduler=scheduler
+    callbacks=[EarlyStopping(patience=3)]
 )
 
 # 6. Plot Training Results 

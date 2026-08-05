@@ -4,55 +4,45 @@ import numpy as np
 
 class Layer:
     """A single layer in a feedforward neural network."""
+    def forward(self, inputs):
+        raise NotImplementedError("Layer must implement forward pass")
+        
+    def backward(self, output_gradient):
+        raise NotImplementedError("Layer must implement backward pass")
 
-    def __init__(self, inputs, outputs, activation : ActivationFunction , initializer: Initializer = XavierInitializer):
-        """Initialize the layer.
-
+class DenseLayer(Layer):
+    def __init__(self, inputs, outputs, initializer: Initializer = None):
+        """Initialize the Dense layer.
+        
         Args:
             inputs (int): Number of input units.
             outputs (int): Number of output units.
-            activation (Activation): The activation function of the layer.
             initializer (Initializer): The weight initializer object.
         """
+        if initializer is None:
+            initializer = XavierInitializer()
         self.W = initializer.initialize_weights(inputs, outputs)
         self.b = np.zeros(outputs, dtype=np.float32)
+        
+    def forward(self, inputs):
+        """Perform linear transformation."""
+        self.inputs = inputs
+        return np.dot(inputs, self.W) + self.b
+        
+    def backward(self, output_gradient):
+        """Compute gradients for weights and biases, and return input gradient."""
+        self.dW = np.dot(self.inputs.T, output_gradient)
+        self.db = np.sum(output_gradient, axis=0)
+        return np.dot(output_gradient, self.W.T)
+
+class ActivationLayer(Layer):
+    """Wrapper layer that applies an ActivationFunction."""
+    def __init__(self, activation: ActivationFunction):
         self.activation = activation
- 
-    def linear_forward(self, inputs):
-        """Perform linear transformation in the forward pass.
-
-        Args:
-            inputs (ndarray): Input data.
-
-        Returns:
-            ndarray: Output of the linear transformation.
-        """
-        self.A_prev = inputs
-        Z = np.dot(inputs, self.W) + self.b
-        self.Z = Z
-        return Z
-    
-    def activation_forward(self, inputs):
-        """Perform activation function in the forward pass.
-
-        Args:
-            inputs (ndarray): Input data.
-
-        Returns:
-            ndarray: Output of the activation function.
-        """
-        return self.activation.f(self.linear_forward(inputs))
-    
-class DenseLayer(Layer):
-    def __init__(self, inputs, outputs, activation: ActivationFunction = None, initializer: Initializer = XavierInitializer):
-        if activation is None:
-            activation = ReLU()
-        super().__init__(inputs, outputs, activation, initializer)
-
-class OutputLayer(Layer):
-    def __init__(self, inputs, outputs, activation: ActivationFunction = None, initializer: Initializer = XavierInitializer):
-        if activation is None:
-            activation = Sigmoid()
-        super().__init__(inputs, outputs, activation, initializer)
-
-
+        
+    def forward(self, inputs):
+        self.inputs = inputs
+        return self.activation.f(inputs)
+        
+    def backward(self, output_gradient):
+        return self.activation.derivative(self.inputs) * output_gradient

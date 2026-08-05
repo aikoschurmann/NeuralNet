@@ -102,3 +102,24 @@ class CrossEntropyLossMultiClass(LossFunction):
     def derivative(self, y, predicted):
         epsilon = 1e-9
         return -(y / (predicted + epsilon)) / len(y)
+
+class CategoricalCrossEntropyWithLogits(LossFunction):
+    """Computes categorical cross entropy directly from logits for numerical stability and simplicity."""
+    
+    def loss(self, y, logits):
+        # Stable softmax
+        shifted_logits = logits - np.max(logits, axis=-1, keepdims=True)
+        exp_z = np.exp(shifted_logits)
+        probs = exp_z / np.sum(exp_z, axis=-1, keepdims=True)
+        
+        epsilon = 1e-9
+        return -np.sum(y * np.log(probs + epsilon)) / len(y)
+
+    def derivative(self, y, logits):
+        # Stable softmax
+        shifted_logits = logits - np.max(logits, axis=-1, keepdims=True)
+        exp_z = np.exp(shifted_logits)
+        probs = exp_z / np.sum(exp_z, axis=-1, keepdims=True)
+        
+        # The derivative of Cross Entropy + Softmax simplifies beautifully:
+        return (probs - y) / len(y)
