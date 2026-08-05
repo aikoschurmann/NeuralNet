@@ -1,4 +1,4 @@
-import numpy as np
+from ender.src.backend import np
 
 class LossFunction:
     """Base class for loss functions."""

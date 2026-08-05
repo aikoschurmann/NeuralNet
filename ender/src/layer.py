@@ -1,6 +1,6 @@
 from ender.src.activations import *
 from ender.src.initializers import *
-import numpy as np
+from ender.src.backend import np
 
 class Layer:
     """A single layer in a feedforward neural network."""

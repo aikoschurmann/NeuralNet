@@ -1,8 +1,7 @@
-
-import ender
+import os
 import tensorflow as tf
+from ender.src.backend import np
 import keras
-import numpy as np
 
 from sklearn.model_selection import train_test_split
 

@@ -1,4 +1,4 @@
-import numpy as np
+from ender.src.backend import np
 
 class Optimizer:
     def __init__(self, learning_rate):

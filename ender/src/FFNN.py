@@ -1,4 +1,4 @@
-import numpy as np
+from ender.src.backend import np
 import math
 from enum import Enum
 from ender.src.layer import Layer
@@ -51,7 +51,10 @@ class FFNN:
         print("Architecture:")
         for i, layer in enumerate(self.layers):
             if hasattr(layer, 'W'):
-                print(f"Layer {i+1}: {layer.__class__.__name__} - Input: {layer.W.shape[0]}, Output: {layer.W.shape[1]}")
+                if len(layer.W.shape) == 2:
+                    print(f"Layer {i+1}: {layer.__class__.__name__} - Input: {layer.W.shape[0]}, Output: {layer.W.shape[1]}")
+                else:
+                    print(f"Layer {i+1}: {layer.__class__.__name__} - Parameters: {layer.W.size + layer.b.size}")
             elif hasattr(layer, 'activation'):
                 print(f"Layer {i+1}: {layer.__class__.__name__} - {layer.activation.__class__.__name__}")
             else:

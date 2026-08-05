@@ -1,4 +1,4 @@
-import numpy as np
+from ender.src.backend import np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
@@ -6,11 +6,11 @@ from tqdm import tqdm
 from dfs import augment_data
 
 # Import your custom library
-# Assuming 'ender' is the package containing the classes from the previous prompt
 import ender 
 from ender.src.activations import ReLU, Softmax
 from ender.src.losses import CategoricalCrossEntropyWithLogits
-from ender.src.layer import DenseLayer, ActivationLayer
+from ender.src.layer import DenseLayer, ActivationLayer, BatchNormalizationLayer, DropoutLayer
+from ender.src.conv import Conv2D, MaxPooling2D, FlattenLayer
 from ender.src.optimizers import Adam
 from ender.src.initializers import HeInitializer, XavierInitializer
 from ender.src.callbacks import EarlyStopping
@@ -19,9 +19,9 @@ from ender.src.FFNN import RegularizationType, FFNN
 # 1. Load and Preprocess Data
 (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
 
-# Flatten and Normalize
-X_train = X_train.reshape(-1, 28*28) / 255.0
-X_test = X_test.reshape(-1, 28*28) / 255.0
+# Reshape for CNN (N, Channels, Height, Width)
+X_train = X_train.reshape(-1, 1, 28, 28) / 255.0
+X_test = X_test.reshape(-1, 1, 28, 28) / 255.0
 
 # One-hot encoding
 y_train = tf.keras.utils.to_categorical(y_train, num_classes=10)
@@ -30,11 +30,12 @@ y_test = tf.keras.utils.to_categorical(y_test, num_classes=10)
 # Split Validation Set
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=42)
 
-X_train, y_train = augment_data(X_train, y_train)
+# Disable data augmentation for CNN to save training time in NumPy
+# X_train, y_train = augment_data(X_train, y_train)
 
 # 2. Define Hyperparameters
-BATCH_SIZE = 500
-EPOCHS = 30  # 15 is usually sufficient for >95% on MNIST
+BATCH_SIZE = 250
+EPOCHS = 5
 LEARNING_RATE = 0.001
 L2_LAMBDA = 0.0001 # Reduced from 1.0 to prevent underfitting
 
@@ -48,24 +49,23 @@ model = FFNN(
     lmbda=L2_LAMBDA
 )
 
-# 4. Build Architecture
-# Input -> Hidden (ReLU) -> Hidden (ReLU) -> ... -> Output (Softmax)
-
-
-# Hidden Layer 1: 784 -> 128
-model.add_layer(DenseLayer(inputs=28*28, outputs=128, initializer=HeInitializer()))
+# CNN Architecture
+model.add_layer(Conv2D(in_channels=1, out_channels=8, kernel_size=3))
 model.add_layer(ActivationLayer(ReLU()))
+model.add_layer(MaxPooling2D(pool_size=2))
 
-# Hidden Layer 2: 128 -> 64
-model.add_layer(DenseLayer(inputs=128, outputs=64, initializer=HeInitializer()))
+model.add_layer(Conv2D(in_channels=8, out_channels=16, kernel_size=3))
 model.add_layer(ActivationLayer(ReLU()))
+model.add_layer(MaxPooling2D(pool_size=2))
 
-# Hidden Layer 3: 64 -> 32
-model.add_layer(DenseLayer(inputs=64, outputs=32, initializer=HeInitializer()))
+model.add_layer(FlattenLayer())
+
+# Dense layers
+model.add_layer(DenseLayer(inputs=16 * 5 * 5, outputs=64, initializer=HeInitializer()))
 model.add_layer(ActivationLayer(ReLU()))
+model.add_layer(DropoutLayer(rate=0.3))
 
-# Output Layer: 32 -> 10 (Raw logits for our loss function)
-model.add_layer(DenseLayer(inputs=32, outputs=10, initializer=XavierInitializer()))
+model.add_layer(DenseLayer(inputs=64, outputs=10, initializer=XavierInitializer()))
 
 model.summary()
 

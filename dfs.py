@@ -1,5 +1,5 @@
 from scipy.ndimage import rotate, shift
-import numpy as np
+from ender.src.backend import np
 
 def augment_data(X, y):
     X_aug, y_aug = [], []

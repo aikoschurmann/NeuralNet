@@ -1,4 +1,4 @@
-import numpy as np
+from ender.src.backend import np
 
 class Initializer:
     def initialize_weights(self, inputs: int, outputs: int):

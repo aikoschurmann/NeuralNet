@@ -1,4 +1,4 @@
-import numpy as np
+from ender.src.backend import np
 from ender.src.layer import Layer
 from ender.src.initializers import XavierInitializer
 
