@@ -6,3 +6,5 @@ from ender import networks
 from ender.src import schedulers
 from ender.src import initializers
 from ender.src import callbacks
+from ender.src.conv import Conv2D, MaxPooling2D, FlattenLayer
+from ender.src.data import DataLoader

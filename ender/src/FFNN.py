@@ -20,10 +20,10 @@ class FFNN:
         self.lmbda = lmbda
         self.loss_function = loss_function
 
-    def forward(self, X):
+    def forward(self, X, training=False):
         output = X
         for layer in self.layers:
-            output = layer.forward(output)
+            output = layer.forward(output, training=training)
         return output
     
     def add_layer(self, layer: Layer):
@@ -96,7 +96,7 @@ class FFNN:
                 X_batch = X_train_shuffled[i:i+batch_size]
                 y_batch = y_train_shuffled[i:i+batch_size]
 
-                output = self.forward(X_batch)
+                output = self.forward(X_batch, training=True)
                 loss = self.loss_function.loss(y_batch, output)
                 total_loss += loss
 
@@ -118,7 +118,7 @@ class FFNN:
                     X_val_batch = X_val[i:i+batch_size]
                     y_val_batch = y_val[i:i+batch_size]
 
-                    val_output = self.forward(X_val_batch)
+                    val_output = self.forward(X_val_batch, training=False)
                     val_loss = self.loss_function.loss(y_val_batch, val_output)
                     total_val_loss += val_loss
 
@@ -155,7 +155,7 @@ class FFNN:
         correct_predictions = 0
 
         for i in range(0, len(X_test), batch_size):
-            output = self.forward(X_test[i:i+batch_size])
+            output = self.forward(X_test[i:i+batch_size], training=False)
             loss = self.loss_function.loss(y_test[i:i+batch_size], output)
             total_loss += loss
 
@@ -169,7 +169,7 @@ class FFNN:
         return test_loss, test_accuracy
 
     def predict(self, X):
-        output = self.forward(X)
+        output = self.forward(X, training=False)
         return np.argmax(output, axis=1)
     
     def save(self, file_path):

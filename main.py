@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
+from dfs import augment_data
 
 # Import your custom library
 # Assuming 'ender' is the package containing the classes from the previous prompt
@@ -28,6 +29,8 @@ y_test = tf.keras.utils.to_categorical(y_test, num_classes=10)
 
 # Split Validation Set
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.1, random_state=42)
+
+X_train, y_train = augment_data(X_train, y_train)
 
 # 2. Define Hyperparameters
 BATCH_SIZE = 500
@@ -95,7 +98,7 @@ ax2.legend(loc='upper right')
 
 plt.title('Training Metrics: Loss & Accuracy')
 plt.tight_layout()
-plt.show()
+plt.savefig('training_metrics.png')
 
 # 7. Testing
 test_loss, test_accuracy = model.test(X_test, y_test, batch_size=BATCH_SIZE)
@@ -122,7 +125,8 @@ def plot_prediction(image, probabilities):
     ax2.set_title(f"Prediction: {np.argmax(probabilities)}")
     
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f'prediction_{np.argmax(probabilities)}.png')
+    plt.close(fig)
 
 # Visualize first 5 failures or successes
 print("\nVisualizing Predictions...")
